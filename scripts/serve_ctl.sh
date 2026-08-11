@@ -3,7 +3,7 @@
 #   serve_ctl.sh stop            — TERM the recorded server group, wait
 #   serve_ctl.sh wait            — wait for /v1/models health
 set -u
-PIDFILE=~/1cat-122/serve.pid
+PIDFILE="${SERVE_PIDFILE:-$HOME/1cat-122/serve.pid}"
 case "${1:-}" in
   stop)
     if [ -f "$PIDFILE" ]; then

@@ -9,7 +9,14 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate 1cat-vllm-122
 cd ~
 
-SNAP=$(ls -d /srv/1cat/cache/hf/hub/models--QuantTrio--Qwen3.5-27B-AWQ/snapshots/*/ | head -1)
+# Reference arm. HF cache location is site-specific; override AWQ_SNAP to
+# point at your own QuantTrio/Qwen3.5-27B-AWQ snapshot directory.
+AWQ_CACHE="${AWQ_CACHE:-/srv/1cat/cache/hf}"
+SNAP="${AWQ_SNAP:-$(ls -d "$AWQ_CACHE"/hub/models--QuantTrio--Qwen3.5-27B-AWQ/snapshots/*/ 2>/dev/null | head -1)}"
+if [ -z "$SNAP" ] || [ ! -d "$SNAP" ]; then
+  echo "ERROR: AWQ snapshot not found. Set AWQ_SNAP to the snapshot dir." >&2
+  exit 1
+fi
 
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export CUDA_HOME=/usr/local/cuda-12.8

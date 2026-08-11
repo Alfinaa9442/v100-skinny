@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Qwen3.6-27B-NVFP4, TP4, serving through the custom skinny kernel.
+# SPECULATIVE profile: enables the fork's SM70 MTP defaults. Pass the
+# speculative config itself via EXTRA_VLLM_ARGS (docs/DEPLOYMENT.md has
+# the flagship k=7 block). Plain-decode counterpart:
+# launch_qwen36_ctfull.sh.
 #
 # Route: VLLM_SM70_NVFP4_TURBOMIND=0 pins the scheme to the (patched)
 # MarlinNvFp4LinearKernel; VLLM_SKINNY_NVFP4=1 dispatches M<=64 to the
 # skinny kernel (decode + speculative-verify widths) with marlin serving
 # M>64 (prefill). First calls self-check numerically vs marlin.
-# Speculation OFF (no --speculative-config; the matrix notes "no valid
-# MTP weights" for 27B-NVFP4 anyway).
 #
 # max-model-len 32768: both weight formats resident (~8GB/rank on 16GB
 # cards) leaves less KV headroom than the 32GB reference target.
@@ -23,9 +25,14 @@ export VLLM_SM70_NVFP4_TURBOMIND=0
 export VLLM_SM70_QUANT_BACKEND=marlin  # forces_marlin() -> SM70 allowed
 export VLLM_SKINNY_NVFP4=${VLLM_SKINNY_NVFP4:-1}
 # Session default: 4-bit lm_head ON (speed-first); end-user/default
-# policy is OFF — see marlin_patched.py policy comment.
+# policy is OFF — see the policy comment in fork_patches/marlin.py.
 export VLLM_SKINNY_LMHEAD=${VLLM_SKINNY_LMHEAD:-1}
-export VLLM_SKINNY_NVFP4_SRC="$HOME/flatness-run/skinny_kernels.cu"
+# CUDA source that is JIT-built at load. Default to the copy in this
+# repository; fall back to the deployed copy on the serving box.
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_SKINNY_SRC="$_SCRIPT_DIR/../kernels/skinny_kernels.cu"
+[ -f "$_SKINNY_SRC" ] || _SKINNY_SRC="$HOME/flatness-run/skinny_kernels.cu"
+export VLLM_SKINNY_NVFP4_SRC="${VLLM_SKINNY_NVFP4_SRC:-$_SKINNY_SRC}"
 export VLLM_1CAT_ENABLE_SM70_MTP_DEFAULTS=1
 # Chain-MTP GDN fast metadata build (our gdn_attn.py patch): reuses the
 # ddtree all-spec fast path for linear chains; -1.4 ms/step, outputs
@@ -80,8 +87,11 @@ else
   NUMA_PREFIX=""
 fi
 
+# NOTE: --host 0.0.0.0 binds every interface, and the OpenAI-compatible
+# endpoint has no authentication. Keep it on a trusted network, put it
+# behind a proxy, or change the bind to 127.0.0.1.
 exec $NUMA_PREFIX python -m vllm.entrypoints.openai.api_server \
-  --model "$HOME/models/Qwen3.6-27B-NVFP4-CTfull" \
+  --model "$SKINNY_MODEL_DIR" \
   --served-model-name qwen3.6-27b-nvfp4-skinny \
   --trust-remote-code \
   --dtype float16 \
