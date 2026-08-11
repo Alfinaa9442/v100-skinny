@@ -264,14 +264,12 @@ re-boot. Rows without a confirmed k are not quotable.
 
 ## 4. Per-benchmark recipes
 
-**Path caveat.** Several harnesses hard-code the box's absolute paths and need
-editing (or a matching user account) on any other machine:
-
-- `benchmarks/k_probe_decode.py` → `OUT = /home/user/flatness-run/k_sweep_matrix.csv`
-- `benchmarks/k_sweep_probe.py` → same `OUT`
-- `benchmarks/qpn_gen.py` → writes `/home/user/flatness-run/lad_<cell>_<tag>.txt`
-- `benchmarks/aime_exact.py` → `FIXDIR = /home/user/flatness-run/ninfer_fixtures`
-- kernel benches → `$HOME/flatness-run/skinny_kernels.cu`, `$HOME/flatness-run/qpn_race.cu`
+**Paths.** The harnesses resolve their inputs and outputs through
+[`benchmarks/_paths.py`](../benchmarks/_paths.py): CUDA sources come from
+`kernels/` (then `kernels/research/`, then the deployed copy on the box),
+result rows are written to `results/`, and the AIME fixtures come from
+`benchmarks/ninfer_fixtures/`. Override with `SKINNY_KERNEL_DIR`,
+`SKINNY_OUT_DIR` and `SKINNY_FIXTURES`.
 
 All server-facing probes talk to `http://127.0.0.1:8000` and default to
 served-model-name `qwen3.6-27b-nvfp4-skinny`; `PROBE_MODEL` overrides it (used
@@ -656,8 +654,6 @@ obtained or rebuilt before the corresponding recipe runs:
 
 Additional friction, not missing but worth knowing:
 
-- **Hard-coded `/home/user/flatness-run/` paths** in `k_probe_decode.py`,
-  `k_sweep_probe.py`, `qpn_gen.py`, `aime_exact.py` (§4).
 - **`fork_patches/README.md` names the dispatch shim `../marlin_patched.py`**,
   but the tracked file is `fork_patches/marlin.py`. Same content, stale path.
 - **Sweep drivers are not shipped** (§3.1): the internal drivers that produced

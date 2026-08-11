@@ -3,6 +3,9 @@ Usage: qpn_gen.py <tag>  -> writes lad_<cell>_<tag>.txt files."""
 import json
 import sys
 import urllib.request
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from _paths import out_csv  # noqa: E402
 
 TAG = sys.argv[1]
 BASE = "http://127.0.0.1:8000"
@@ -43,7 +46,7 @@ for cell, prompt, thinking, mt in CELLS:
         d = json.loads(r.read().decode())
     msg = d["choices"][0]["message"]
     text = (msg.get("reasoning") or "") + "\x1d" + (msg.get("content") or "")
-    with open(f"/home/user/flatness-run/lad_{cell}_{TAG}.txt", "w") as f:
+    with open(out_csv(f"lad_{cell}_{TAG}.txt"), "w") as f:
         f.write(text)
     print(f"saved lad_{cell}_{TAG}.txt "
           f"({d['usage']['completion_tokens']} tok)")

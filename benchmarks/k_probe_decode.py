@@ -14,11 +14,14 @@ import time
 import urllib.request
 
 import os as _os
+import sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from _paths import kernel_src, out_csv, fixtures_dir  # noqa: E402
 
 BASE = "http://127.0.0.1:8000"
 MODEL = _os.environ.get("PROBE_MODEL", "qwen3.6-27b-nvfp4-skinny")
 K = int(sys.argv[1])
-OUT = "/home/user/flatness-run/k_sweep_matrix.csv"
+OUT = out_csv("k_sweep_matrix.csv")
 
 EXTRACT_PASSAGE = ("The lighthouse keeper checked the lamp at dusk. Salt wind "
                    "pressed against the tower glass. Ships passed far out. ") * 30

@@ -7,11 +7,16 @@ import torch
 
 os.environ.setdefault("TORCH_CUDA_ARCH_LIST", "7.0")
 from torch.utils.cpp_extension import load  # noqa: E402
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.join(
+    _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+    "benchmarks"))
+from _paths import kernel_src  # noqa: E402
 
 dev = torch.device("cuda:0")
 ext = load(
     name="skinny_nvfp4_v9",
-    sources=[os.path.expanduser("~/flatness-run/skinny_kernels.cu")],
+    sources=[kernel_src()],
     extra_cuda_cflags=["-O3", "--use_fast_math", "-lineinfo",
                        "-gencode=arch=compute_70,code=sm_70"],
     verbose=False,

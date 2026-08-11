@@ -1,6 +1,6 @@
 """Per-k workload probe: acceptance (incl. per-position) + wall tok/s
 on the math/code fixture cells. Run once per booted k; k passed as argv.
-Appends CSV rows to ~/flatness-run/k_sweep_matrix.csv.
+Appends CSV rows to results/k_sweep_matrix.csv (SKINNY_OUT_DIR overrides).
 """
 import json
 import sys
@@ -8,13 +8,16 @@ import time
 import urllib.request
 
 import os as _os
+import sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from _paths import kernel_src, out_csv, fixtures_dir  # noqa: E402
 
 BASE = "http://127.0.0.1:8000"
 MODEL = _os.environ.get("PROBE_MODEL", "qwen3.6-27b-nvfp4-skinny")
 K = int(sys.argv[1])
 CELL_SET = sys.argv[2] if len(sys.argv) > 2 else "mathcode"
 TAG = sys.argv[3] if len(sys.argv) > 3 else ""
-OUT = "/home/user/flatness-run/k_sweep_matrix.csv"
+OUT = out_csv("k_sweep_matrix.csv")
 
 MATH_PROMPT = ("A train leaves station A at 60 km/h. Two hours later a "
                "second train leaves the same station at 90 km/h on a "

@@ -1,7 +1,7 @@
 """Concurrency probe: aggregate + per-stream decode throughput at N
 simultaneous streams. Usage: concurrency_probe.py <levels> <workload>
 e.g. concurrency_probe.py 1,2,4,8 natural
-Appends rows to ~/flatness-run/concurrency_matrix.csv.
+Appends rows to results/concurrency_matrix.csv (SKINNY_OUT_DIR overrides).
 """
 import json
 import sys
@@ -10,13 +10,16 @@ import threading
 import urllib.request
 
 import os as _os
+import sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from _paths import kernel_src, out_csv, fixtures_dir  # noqa: E402
 
 BASE = "http://127.0.0.1:8000"
 MODEL = _os.environ.get("PROBE_MODEL", "qwen3.6-27b-nvfp4-skinny")
 LEVELS = [int(x) for x in sys.argv[1].split(",")]
 WORKLOAD = sys.argv[2] if len(sys.argv) > 2 else "natural"
 TAG = sys.argv[3] if len(sys.argv) > 3 else ""
-OUT = "/home/user/flatness-run/concurrency_matrix.csv"
+OUT = out_csv("concurrency_matrix.csv")
 MAX_TOKENS = 512
 
 PROMPTS = {

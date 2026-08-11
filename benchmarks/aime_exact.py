@@ -12,12 +12,16 @@ import urllib.request
 
 BASE = "http://127.0.0.1:8000"
 import os
+import os as _os
+import sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from _paths import kernel_src, out_csv, fixtures_dir  # noqa: E402
 MODEL = os.environ.get("PROBE_MODEL", "qwen3.6-27b-nvfp4-skinny")
 K = int(sys.argv[1])
 MODE = sys.argv[2]
 SEED = int(sys.argv[3]) if len(sys.argv) > 3 else None
 MAXTOK = int(os.environ.get("AIME_MAX_TOKENS", "20000"))
-FIXDIR = "/home/user/flatness-run/ninfer_fixtures"
+FIXDIR = fixtures_dir()
 
 FIXTURES = ["long_decode_aime26_01", "long_decode_aime26_15",
             "long_decode_aime26_30"]
