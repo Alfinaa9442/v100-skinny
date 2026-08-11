@@ -53,3 +53,22 @@ is the structural price of dequant→shared-memory→fragment at V100
 occupancy; no load-schedule, tile-shape, or instruction-set change on
 SM70 beats it. M-heavy batch serving concedes to TurboMind AWQ; this
 stack owns single-stream and low-concurrency (crossover at 4–8 streams).
+
+## Other closed kernel paths
+
+**int8 `dp4a` SIMT (M 4–16).** `dp4a` issues 4 MACs per slot against HFMA2's
+2, and the e2m1 lattice ×2 is integer-exact, so the weight side is lossless
+int8 and only activations quantize (symmetric per-16-group, fused single
+launch, amortized over all N rows). The prototype was correct to 1.4–2%
+relative and still ran 50–140% slower than fp16 SIMT/WMMA at every M in
+4–16, across three optimization rounds (fused quant kernel recovering 3×
+over the naive torch chain, direct half output, conflict-free staged
+layout).
+
+Mechanism: Volta single-dispatch. `dp4a`'s MACs land on the INT pipe
+beside their own nibble unpack, so the 4-MAC/slot density pays for issue
+contention with the decode. The fp16 path wins by splitting dequantization
+(INT) from MACs (FP16) across both pipes — the same property, measured from
+the other side. `gemm_dp4a` and `skinny_quant_a8` remain in
+`kernels/skinny_kernels.cu` for reference; production dispatch never
+selects them.

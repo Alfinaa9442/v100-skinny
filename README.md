@@ -103,14 +103,11 @@ The SIMT path serves plain decode, and it is the fastest kernel here at M=1. Its
 warps for each block, and one output row for each warp. For narrow K it gives each warp two rows
 instead of one. At M=1 the GEMM only streams weights, so the problem is memory and not math.
 
-**The dequantization and the MACs use different pipes.** The nibble decode is integer work, and the
-MACs are fp16 HFMA2. Volta issues those on separate pipes, so the decode hides under the MACs.
-
-**An int8 experiment proves the point.** `dp4a` gives 4 MACs for each issue slot, against 2 for
-HFMA2. The prototype was correct to 1.4–2%. It was still 50–140% slower at every M from 4 to 16,
-across three rounds of optimization. Its MACs sit on the INT pipe beside their own nibble unpack, so
-the extra density pays for issue contention instead. `gemm_dp4a` stays in the kernel file for
-reference, and the dispatch never selects it.
+**SIMT saturates both Volta issue pipes.** The nibble decode is integer work, and the MACs are fp16
+HFMA2. Volta issues those on separate pipes, so the decode runs beside the MACs and not in front of
+them. That overlap is why a kernel which dequantizes every weight still reaches 69% of the copy
+ceiling. An int8 `dp4a` variant puts the MACs and their own unpack on the same pipe, and it loses
+50–140% ([`docs/twin_race_notes.md`](docs/twin_race_notes.md)).
 
 The decoder also matters. A shift-and-rebias decoder derived from TurboMind beats a PRMT lookup table
 by about 28% at M=1. It has a shorter dependency chain and fewer INT-pipe operations for each value.
