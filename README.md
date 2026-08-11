@@ -26,8 +26,9 @@ than the reference serving stack for this hardware in **5 of the 6 domains**, an
 
 The kernels and the serving profiles are the work here. They sit on
 **[1Cat-vLLM](https://github.com/1CatAI/1Cat-vLLM)**, the vLLM fork that carries Volta support. That
-fork supplies the speculative machinery and the SM70 route itself — see
-[Acknowledgements](#acknowledgements).
+fork supplies the SM70 NVFP4 route, the `FLASH_ATTN_V100` attention backend and the chain-MTP
+speculative machinery. Every measurement here runs on all three
+([Acknowledgements](#acknowledgements)).
 
 | Component | Served |
 |---|---|
@@ -399,8 +400,11 @@ is separate, and it is not a GitHub fork, so nothing in the interface shows that
 
 The fork supplies the SM70 NVFP4 route, and the kernels here only replace the GEMM inside it. It also
 supplies the chain-MTP machinery that every speculative figure runs on, and the fast path that
-[`fork_patches/`](fork_patches) extends. The acceptance flag `draft_sample_method=greedy` came from
-the fork too. This project measured what that flag was worth, and it did not build it.
+[`fork_patches/`](fork_patches) extends. The `FLASH_ATTN_V100` backend is theirs as well, and it
+serves the attention in every measurement here. That backend builds in turn on
+[flash-attention-v100](https://github.com/ai-bond/flash-attention-v100), an implementation of
+FlashAttention-2 for the V100. The acceptance flag `draft_sample_method=greedy` came from the fork
+too, and this project measured what it was worth rather than building it.
 
 Thanks also to NVIDIA and Qwen for the
 [checkpoint](https://huggingface.co/nvidia/Qwen3.6-27B-NVFP4). TurboMind / LMDeploy supplied the
