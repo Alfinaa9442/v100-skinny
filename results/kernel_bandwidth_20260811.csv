@@ -1,0 +1,20 @@
+# Effective memory bandwidth vs M, production dispatch (simt M<=3 / qpn 4-16 / wmma 17-64),
+# aggregate over the 5 real Qwen3.6-27B TP4 per-rank shapes, V100 copy ceiling 825 GB/s.
+# Marlin reference: banked nvfp4_flatness_results.csv (flat 94-96 GB/s, all M).
+# Reproduce: benchmarks/kernel_bw_bench.py. Measured 2026-08-11, current kernels.
+# NOTE: superseded in absolute level by kernel_m_sweep_20260812.csv, measured
+# after the box tuning (pinned application clocks); those cells run 2-14%
+# faster. This file is retained because its skinny and Marlin numbers share
+# one sitting, which is what makes the vs-Marlin ratio valid.
+M,prod_kernel,eff_GBs,pct_of_copy_ceiling
+1,simt,565.2,69
+2,simt,508.3,62
+3,simt,416.9,51
+4,qpn,455.4,55
+5,qpn,451.4,55
+8,qpn,430.7,52
+11,qpn,325.1,39
+16,qpn,298.2,36
+24,wmma,189.5,23
+32,wmma,183.0,22
+64,wmma,105.8,13

@@ -1,0 +1,68 @@
+--- /home/user/miniconda3/envs/1cat-vllm-122/lib/python3.12/site-packages/vllm/v1/spec_decode/llm_base_proposer.py.pre_native	2026-08-10 22:39:10.523277505 +1000
++++ /home/user/miniconda3/envs/1cat-vllm-122/lib/python3.12/site-packages/vllm/v1/spec_decode/llm_base_proposer.py	2026-08-11 13:37:09.999041062 +1000
+@@ -1304,6 +1304,47 @@
+ 
+         block_size = self.block_size
+         assert block_size > 0, "block_size has not been initialized."
++        # SM70 native round (stage 1): the k-1 drafter iterations as one
++        # captured graph — single native launch per round. Env-gated;
++        # falls back to the loop below on any capture refusal.
++        import importlib.util as _ilu
++        import os as _os
++        _nr_path = _os.path.expanduser("~/flatness-run/sm70_native_round.py")
++        _nr_spec = _ilu.spec_from_file_location("sm70_native_round", _nr_path)
++        _nr = getattr(self, "_nr_module", None)
++        if _nr is None:
++            _nr = _ilu.module_from_spec(_nr_spec)
++            _nr_spec.loader.exec_module(_nr)
++            self._nr_module = _nr
++        if (_nr.NATIVE_ROUND_ENABLED and batch_size == 1
++                and not self.supports_mm_inputs
++                and draft_probs_list is None
++                and getattr(common_attn_metadata, "slot_mapping", None)
++                is not None
++                and common_attn_metadata.slot_mapping.numel()
++                == self.num_speculative_tokens + 1):
++            nr = getattr(self, "_native_round", None)
++            if nr is None:
++                self._native_block_size = block_size
++                nr = _nr.NativeDraftRound(self)
++                self._native_round = nr
++                nr.capture(common_attn_metadata, sampling_metadata,
++                           batch_size, input_batch_size,
++                           batch_size_across_dp, hidden_states,
++                           draft_token_ids, positions)
++            if nr.graph is not None:
++                rest = nr.run(common_attn_metadata, hidden_states,
++                              draft_token_ids, positions)
++                if not _nr.NATIVE_ROUND_DEBUG:
++                    return torch.cat([draft_token_ids.view(1, 1),
++                                      rest.view(1, -1)], dim=1)
++                # serve-graph diagnostic: return graph result so its
++                # state writes are the only ones; per-round self-check
++                # via a cheap running counter on token id 198 (newline,
++                # frequent in the counting probe) is not needed — the
++                # acceptance metric itself is the signal now.
++                self._nr_debug_rest = rest.clone()
++
+         for token_index in range(self.num_speculative_tokens - 1):
+             spec_step_idx = token_index + 1
+             loop_cpu_start = time.perf_counter() if profile_events is not None else 0.0
+@@ -1403,6 +1444,17 @@
+ 
+         # [batch_size, num_speculative_tokens]
+         draft_token_ids = torch.stack(draft_token_ids_list, dim=1)
++        _dbg_rest = getattr(self, "_nr_debug_rest", None)
++        if _dbg_rest is not None:
++            self._nr_debug_rest = None
++            py_rest = draft_token_ids.view(-1)[1:].to(_dbg_rest.dtype)
++            match = (py_rest == _dbg_rest.view(-1)).tolist()
++            if not all(match):
++                logger.info("native-round DRAFT MISMATCH pattern=%s py=%s "
++                            "graph=%s", match, py_rest.tolist(),
++                            _dbg_rest.view(-1).tolist())
++            else:
++                logger.info("native-round drafts MATCH this round")
+         if draft_probs_list is not None:
+             self._last_draft_probs = torch.stack(draft_probs_list, dim=1).contiguous()
+         self._sm70_mtp_profile_finish(profile_events, "total_gpu", profile_total_start)

@@ -1,0 +1,3 @@
+stack,config,mean_decode_tok_s,per_domain_range,lm_head
+ours-nvfp4-skinny,plain-MTP0-SIMT,86.6,86.5-86.8,fp16(lossless)
+onecat-awq-turbomind,plain-MTP0,70.7,70.5-71.1,fp16

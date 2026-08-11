@@ -1,0 +1,36 @@
+# Flagship matrix: native NVFP4 lm_head, think/nothink x 6 domains, decode-only,
+# single-stream greedy. THINK CELLS ARE CAPPED at 2048 tokens -> they measure the
+# trace-dominated phase, NOT full requests (see phase_probe_20260811.csv for
+# honest end-to-end thinking-on rates). 1Cat rows partial (arm cut as redundant).
+config,domain,mode,decode_tok_s,tau,round_ms
+native_k15,prose,think,72.1,1.90,40.2
+native_k15,prose,nothink,62.9,1.48,39.4
+native_k15,math,think,155.0,5.20,39.9
+native_k15,math,nothink,163.5,5.54,39.8
+native_k15,code,think,88.6,2.54,39.9
+native_k15,code,nothink,137.7,4.45,39.5
+native_k15,json,think,131.6,4.26,39.8
+native_k15,json,nothink,242.9,8.74,39.8
+native_k15,csv,think,124.6,3.96,39.8
+native_k15,csv,nothink,190.1,6.60,39.6
+native_k15,extract,think,225.7,8.09,40.2
+native_k15,extract,nothink,381.9,14.61,40.6
+native_k7,prose,think,96.4,1.84,29.5
+native_k7,prose,nothink,82.0,1.33,28.5
+native_k7,math,think,183.6,4.40,29.4
+native_k7,math,nothink,196.6,4.48,27.7
+native_k7,code,think,122.1,2.57,29.2
+native_k7,code,nothink,169.1,3.81,28.4
+native_k7,json,think,157.1,3.59,29.2
+native_k7,json,nothink,228.4,5.56,28.6
+native_k7,csv,think,169.3,3.93,29.0
+native_k7,csv,nothink,200.4,4.72,28.4
+native_k7,extract,think,213.9,5.41,29.9
+native_k7,extract,nothink,261.5,6.92,30.1
+onecat_k4,prose,think,89.2,1.78,31.2
+onecat_k4,prose,nothink,87.8,1.63,29.9
+onecat_k4,math,think,127.3,2.94,30.9
+onecat_k4,math,nothink,142.3,3.21,29.6
+onecat_k4,code,think,122.1,2.75,30.7
+onecat_k4,code,nothink,133.5,3.01,30.0
+onecat_k4,json,think,120.8,2.56,29.5

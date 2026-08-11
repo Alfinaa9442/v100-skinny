@@ -1,0 +1,80 @@
+# Per-kernel M sweep (2026-08-12): all three NVFP4 W4A16 GEMM kernels measured
+# at every M from 1 to 16, on the maintenance-tuned, NUMA-pinned box.
+# Effective bandwidth = packed weight bytes / GEMM time, aggregate over the five
+# real Qwen3.6-27B TP4 per-rank shapes (K,N): (1536,5120) (4352,5120)
+# (5120,8704) (5120,4096) (5120,2048). V100 measured memcpy ceiling 825 GB/s.
+# Harness: benchmarks/kernel_m_sweep.py (200 timed iters after 20 warmup per
+# cell, real-activation outliers injected). GPU idle: server torn down for the
+# sweep and restored after.
+#
+# This is the dataflow-ownership view. kernel_bandwidth_20260811.csv measures
+# only the production-dispatch winner per M; here every kernel is measured at
+# every M, so the crossovers are visible:
+#   SIMT  611.7 -> 250.2 across M=1..8, then UNSUPPORTED (compiled for M<=8):
+#         one-row-per-warp dataflow, activation reuse falls off linearly in M.
+#   QPN   flat 480 -> 441 across M=1..8 (four quadpairs share one activation
+#         tile), steps down to 344 at M=9 where the M 9-16 route pads to two
+#         8-row A-tiles, then 344 -> 312 to M=16.
+#   WMMA  flat 258 -> 242 across the whole range: dominated everywhere below
+#         M=17, and the only kernel that serves M>16 (both others cap at 16).
+# Measured crossovers: SIMT->QPN at M=3/4 (M=3 is a 0.25% tie: 474.6 vs 475.8),
+# QPN->WMMA forced at M=17 by the QPN 16-row cap, not by bandwidth.
+# Production dispatch (SIMT M<=3 / QPN 4-16 / WMMA 17-64) matches the measured
+# frontier.
+# NOTE vs kernel_bandwidth_20260811.csv: same method (five-shape aggregate,
+# 200 iters after 20 warmup, identical shapes and formula) but a LATER SITTING.
+# This run is on the maintenance-tuned box (application clocks pinned 877/1530,
+# C-states disabled, NUMA-pinned); the 08-11 run predates that tuning. Same
+# cells here measure +2.1% to +13.8% faster, SIMT gaining most (M=3 +13.8%,
+# M=1 +8.2%) and QPN least (M=4-8 +2.1-2.5%). Each run is internally
+# consistent; the 08-11 file keeps the Marlin ratio because its skinny and
+# Marlin numbers share one sitting. Do not mix cells across the two files.
+M,kernel,eff_GBs,pct_of_copy_ceiling
+1,simt,611.7,74%
+1,qpn,480.2,58%
+1,wmma,258.5,31%
+2,simt,569.1,69%
+2,qpn,479.9,58%
+2,wmma,258.0,31%
+3,simt,474.6,58%
+3,qpn,475.8,58%
+3,wmma,257.4,31%
+4,simt,433.7,53%
+4,qpn,464.8,56%
+4,wmma,252.1,31%
+5,simt,350.5,42%
+5,qpn,460.9,56%
+5,wmma,250.2,30%
+6,simt,309.3,37%
+6,qpn,455.7,55%
+6,wmma,251.2,30%
+7,simt,274.5,33%
+7,qpn,450.9,55%
+7,wmma,250.2,30%
+8,simt,250.2,30%
+8,qpn,441.3,53%
+8,wmma,249.1,30%
+9,simt,unsupported,simt kernel supports M in 1..8, got 9
+9,qpn,344.4,42%
+9,wmma,250.1,30%
+10,simt,unsupported,simt kernel supports M in 1..8, got 10
+10,qpn,343.6,42%
+10,wmma,250.0,30%
+11,simt,unsupported,simt kernel supports M in 1..8, got 11
+11,qpn,341.4,41%
+11,wmma,249.5,30%
+12,simt,unsupported,simt kernel supports M in 1..8, got 12
+12,qpn,337.5,41%
+12,wmma,247.9,30%
+13,simt,unsupported,simt kernel supports M in 1..8, got 13
+13,qpn,332.0,40%
+13,wmma,246.4,30%
+14,simt,unsupported,simt kernel supports M in 1..8, got 14
+14,qpn,325.2,39%
+14,wmma,245.0,30%
+15,simt,unsupported,simt kernel supports M in 1..8, got 15
+15,qpn,318.6,39%
+15,wmma,243.1,29%
+16,simt,unsupported,simt kernel supports M in 1..8, got 16
+16,qpn,311.8,38%
+16,wmma,242.0,29%

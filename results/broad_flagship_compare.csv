@@ -1,0 +1,7 @@
+domain,ours_k7_fp16_lm_head_tok_s,onecat_awq_k4_fp16_lm_head_tok_s,lead_x
+prose,69.6,86.3,0.806
+math,160.9,126.9,1.268
+code,142.8,133.0,1.074
+json,192.9,150.6,1.281
+csv,171.7,118.8,1.445
+extract,222.4,156.9,1.417

@@ -1,0 +1,58 @@
+# Launch anchors, PINNED (2026-08-12, speed-maxx session) — SUPERSEDES
+# launch_anchors_20260812.csv as the shipping dataset.
+# Box program applied and durable: NUMA pinning (numactl --cpunodebind=0
+# --membind=0 in both launch scripts; all 4 GPUs on node 0), kernel.numa_
+# balancing=0 + vm.swappiness=10 (sysctl.d), C3/C6 disabled + app clocks
+# 877/1530 via vllm-box-tuning.service (systemd oneshot, reboot-durable),
+# grub cleaned to "quiet splash" (staged max_cstate/pcie_aspm args removed:
+# max_cstate=1 would kill C1E + foreclose runtime C-state experiments;
+# ASPM is BIOS-disabled on this platform — FADT denies OS control, links
+# already ASPM Disabled).
+# C6-parking A/B (same boot, toggle): C6-on costs +0.1 ms/round uniformly
+# -> C-states stay disabled. Turbostat: busy cores 3200 MHz (all-core bin)
+# under both policies; host is burst-idle (<1% Busy), not spin-bound.
+# RESULT: pinning beats the best historical sitting on every k=7 cell
+# (+3.5-4.3% vs the unpinned 2026-08-12 anchor); placement variance killed
+# (PLACEMENT gate: policy=bind:0 + even-CPU affinity per worker, receipts
+# in final_anchors.log / k15_anchor.log on box).
+# Gates ALL PASSED on every quoted boot: K_CONFIRMED, NATIVE lm_head x4
+# (zero requant fallback), KV sizing (4.85 GiB k7/plain-class; 4.85 k15
+# DROP_CT), self-check 0, placement gate, CHECK closure err <=1.0%.
+# Routes (k7 boot): M1=qpn1-only, M8/M16=qpn, M>=18+prefill=marlin.
+# k15 notes: (a) DROP_CT bisect — CT-present arm extract 366.3 vs DROP_CT
+# 366.0 -> DROP_CT exonerated for the k15 extract delta; k15 profile keeps
+# DROP_CT=1. (b) The historical extract 381.9 (flagship_matrix) rode the
+# pre-qpn1-era envelope (MNS=4 GMU=0.94 CT-present) which now OOMs at
+# capture (qpn1 prepack + native head grew the resident set); 366.0 is the
+# current-era reproducible number. (c) extract byte-diff LOSSLESS vs the
+# k7 lossless lineage (ext_k7_ref.txt) on every k15 boot today.
+# QUOTABILITY RULE (new, banked): probe rows only from compile-cache-WARM
+# boots. Both fresh-compile boots today (post cache-clear) doubled the
+# spec-round counters (rounds x2, round_ms /2, giant first-request ttft;
+# wall-clock decode + tau unaffected) and were caught by CHECK closure.
+# Disk incident: root hit 100% mid-boot (~/.cache/vllm/torch_compile_cache
+# = 60 GB, 93 stale config entries); cleared, 60 GB free. Cache growth is
+# unbounded — periodic cleanup is now an ops note in DEPLOYMENT.
+# tau variance note: prose tau flips 1.33-1.48 run-to-run (same boot, same
+# config — highest-entropy cell); math 4.40/4.41, json 5.56-5.60/8.74-8.83
+# same class. Steady fingerprint cells: code 3.81/4.45, csv 4.79/6.60,
+# extract 6.92/14.61 (exact on every run).
+arm,cell,k,decode_tok_s,tau,round_ms,rounds,gen,ttft_ms,incl_prefill_tok_s,k_confirmed
+plain_pinned,prose-nothink-1024,0,91.2,0.00,0.0,0,1024,148,90.1,yes
+plain_pinned,math-think-2048,0,90.9,0.00,0.0,0,2015,132,90.4,yes
+plain_pinned,code-nothink-1024,0,91.2,0.00,0.0,0,1024,125,90.3,yes
+plain_pinned,struct-json-1024,0,91.1,0.00,0.0,0,1024,126,90.2,yes
+plain_pinned,struct-csv-1024,0,91.2,0.00,0.0,0,1024,125,90.2,yes
+plain_pinned,extract-nothink-512,0,90.9,0.00,0.0,0,512,218,87.6,yes
+k7_flagship_pinned,prose-nothink-1024,7,88.1,1.48,28.2,413,1024,178,86.9,yes
+k7_flagship_pinned,math-think-2048,7,185.1,4.40,29.1,380,2048,187,182.5,yes
+k7_flagship_pinned,code-nothink-1024,7,170.6,3.81,28.2,213,1024,190,166.1,yes
+k7_flagship_pinned,struct-json-1024,7,231.8,5.60,28.3,156,1024,189,223.6,yes
+k7_flagship_pinned,struct-csv-1024,7,204.0,4.79,28.2,178,1024,178,198.1,yes
+k7_flagship_pinned,extract-nothink-512,7,263.7,6.92,29.9,65,512,231,238.9,yes
+k15_profile_pinned,prose-nothink-1024,15,60.4,1.40,39.8,426,1024,158,60.0,yes
+k15_profile_pinned,math-think-2048,15,150.9,5.18,40.9,332,2048,157,149.6,yes
+k15_profile_pinned,code-nothink-1024,15,136.6,4.45,39.9,188,1024,179,134.1,yes
+k15_profile_pinned,struct-json-1024,15,243.4,8.83,40.1,105,1024,177,235.8,yes
+k15_profile_pinned,struct-csv-1024,15,188.6,6.60,39.9,136,1024,155,184.7,yes
+k15_profile_pinned,extract-nothink-512,15,366.0,14.61,42.4,33,512,239,320.9,yes

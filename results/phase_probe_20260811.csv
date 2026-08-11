@@ -1,0 +1,16 @@
+# Two-phase probe: k=7 native lm_head flagship, uncapped generations (8192 budget),
+# thinking on. tau columns are metrics-exact per phase; e2e = gen/full span.
+# Phase token counts are chunk-derived (multi-token chunks bias the split toward
+# the trace; corrected rates via round-time: e.g. json payload ~270 tok/s).
+# benchmarks/phase_probe.py.
+domain,gen_tokens,finish,trace_tok,trace_tau,payload_tok,payload_tau,e2e_tok_s
+prose,3453,natural,1214,2.11,2239,1.47,91.1
+math,2504,natural,2042,4.40,462,5.02,188.7
+code,7234,natural,3089,2.61,4145,3.69,142.6
+json,7644,natural,5810,4.56,1834,6.99,207.3
+extract,8192,capped,2437,5.29,5755,6.96,249.3
+# Addendum 2026-08-11 late: sampled-regime check (UI defaults: model sampling,
+# thinking on, via usage-proxy timing). json prompt: 153.8 tok/s over 4935 tok
+# (server-side repro) / 165 (user chat) vs 207.3 greedy-think e2e and 228.4
+# greedy-nothink — the sampled-acceptance tax stacks ~25% on the thinking tax.
+# Chat-default UX for structured domains is the ~155-165 band, not 207/228.

@@ -1,0 +1,32 @@
+fixture,stack,config,seed_mean_decode_tok_s,seeds,source
+long_decode_aime26_01,ours-nvfp4-skinny,k7-qpn-greedy-draft-4bit-lm_head,172.8,"173.4;179.6;165.3 (seeds 1001;2002;3003)",benchmarks/aime_exact.py
+long_decode_aime26_15,ours-nvfp4-skinny,k7-qpn-greedy-draft-4bit-lm_head,126.4,"128.1;120.9;130.3 (seeds 1001;2002;3003)",benchmarks/aime_exact.py
+long_decode_aime26_30,ours-nvfp4-skinny,k7-qpn-greedy-draft-4bit-lm_head,140.8,"149.2;137.4;135.7 (seeds 1001;2002;3003)",benchmarks/aime_exact.py
+long_decode_aime26_01,1cat-awq-turbomind,k4-mtp-defaults-fp16-lm_head,112.2,"109.0;113.0;114.6",scripts/onecat_aime.sh
+long_decode_aime26_15,1cat-awq-turbomind,k4-mtp-defaults-fp16-lm_head,98.4,"97.8;99.9;97.6",scripts/onecat_aime.sh
+long_decode_aime26_30,1cat-awq-turbomind,k4-mtp-defaults-fp16-lm_head,109.1,"108.4;109.5;109.5",scripts/onecat_aime.sh
+long_decode_aime26_01,ninfer-rtx5090,mtp3-published-n5,222.7,"±3.4; 11717±477 tok; acc 80.8±1.8%; 3.43 t/r",corrected reference 2026-08-11
+long_decode_aime26_15,ninfer-rtx5090,mtp3-published-n5,201.6,"±2.9; 65536±0 tok (THEIR cap); acc 74.7±1.5%",corrected reference 2026-08-11
+long_decode_aime26_30,ninfer-rtx5090,mtp3-published-n5,216.3,"±1.5; 46439±3719 tok; acc 80.8±0.9%",corrected reference 2026-08-11
+# CORRECTION-OF-CORRECTION 2026-08-11: the 175.4/161.9/172.2 table was the wrong
+# ninfer table (user-confirmed); the 222.7/201.6/216.3 MTP3 figures stand as the
+# reference. Note their f15 hits THEIR 65536 cap (zero variance). Original note
+# below kept for the record:
+# [superseded] prior ninfer rows (222.7/201.6/216.3) superseded by the
+# MTP3 long-reasoning table (n=5, with completion-token counts) — the comparison
+# reference per user direction. Note their fixtures run to natural EOS: f15 ~62k,
+# f30 ~47k tokens — beyond our 24576 serving context; historical 20k-capped rows
+# for f15/f30 measured a truncated regime. f01 (~10.7k natural) is the clean
+# apples-to-apples cell and fits our context fully.
+# k-A/B on f01, native lm_head, ninfer profile, seed 1001, budget 23000
+# (2026-08-11; arms were cross-labeled by a leftover-server boot race —
+# corrected via tau/acc%=k identity: 4.31/0.616=7, 5.73/0.382=15):
+long_decode_aime26_01,ours-native-k7,single-seed-1001,175.5,"tau 4.31; 8000 tok; pos 79/69/59",aime_kab
+long_decode_aime26_01,ours-native-k15,single-seed-1001,153.7,"tau 5.73; 5519 tok; pos 80/70/60",aime_kab
+long_decode_aime26_01,ours-native-k7,verified-boot-seed-1001,174.8,"tau 4.29; 8073 tok; pos 80/68/59; K_CONFIRMED",aime_tri (replication of 175.5)
+# Provenance (verified 2026-08-11 against github.com/Neroued/ninfer docs/performance.md):
+# ninfer MTP3 long-reasoning bench = temperature 0.6, top-p 0.95, top-k 20, presence
+# penalty 1.0, five fixed seeds, thinking enabled, 65536-token output limit, quote:
+# 'stochastic sampling (not greedy)'. Their spec profile: --spec mtp --draft-tokens 3
+# --lm-head-draft. Fixtures carry messages only; the profile is applied by
+# benchmarks/aime_exact.py 'ninfer' mode and matches their documented settings.

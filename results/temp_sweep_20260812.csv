@@ -1,0 +1,14 @@
+# Temperature sweep: ours native-lm_head k=7 (MNS=4-era boot), thinking on,
+# uncapped (8192), top-p 0.95/top-k 20/seed 1001 for T>0, one trajectory/cell.
+# * = generation spent entire budget inside the thinking phase (no payload):
+# think-termination is fragile on tabular/repeat tasks across LOW-MID temps
+# (csv fails at T=0 and 0.3, concludes at 0.6/1.0; extract fails at 0.3/0.6,
+# concludes at 0/1.0) — T=1.0 concluded everything. Greedy T=0 reruns are
+# byte-deterministic within a serving config (validated vs prior arm).
+domain,T0_e2e,T03_e2e,T06_e2e,T10_e2e,payload_tau_T0,payload_tau_T10
+prose,85.8,86.9,81.8,78,1.36,1.26
+math,188.4,168.6,167.0,164,5.02,4.63
+code,141.4,137.9,128.0,119,3.66,2.88
+json,185.1,176.7,184.3,170,5.58,6.50
+csv,210.0*,186.9*,151.5,131,,5.88
+extract,242.4,242.5*,244.7*,243,6.96,6.97

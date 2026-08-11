@@ -1,0 +1,14 @@
+# Logs and scratch
+*.log
+*.tmp
+__pycache__/
+*.pyc
+.DS_Store
+.claude/
+
+# Large / generated artifacts (kept out of VCS; regenerate via benchmarks/)
+*.pt
+*.safetensors
+build/
+dist/
+*.so
