@@ -57,9 +57,7 @@ reference is in [`results/nvfp4_flatness_results.csv`](results/nvfp4_flatness_re
 | Stock Marlin (the NVFP4 fallback) | 96.0 GB/s | 12% |
 | | **5.9× faster** | |
 
-Marlin thus leaves **88%** of the memory bandwidth of the card unused. The first version of the
-skinny kernel overflowed fp16 on real activation outliers. The fix folds the global scale into the
-group scales in the kernel, and the kernel flushes to fp32 for each 16 elements.
+Marlin thus leaves **88%** of the memory bandwidth of the card unused.
 
 Three kernels serve three M bands in the production dispatch: SIMT at M≤3, QPN at M=4–16, and WMMA at
 M=17–64. The bandwidth of Marlin is almost flat with M: 96.0 at M=1, 94.4 at M=16, 92.9 at M=32 and
@@ -98,6 +96,27 @@ cost grew with M would give the speculation nothing to win.
 TurboMind is faster in the batch band above M=16. Three independent kernel efforts showed that the
 WMMA plateau of the V100 is structural
 ([`docs/twin_race_notes.md`](docs/twin_race_notes.md)).
+
+### The SIMT kernel: 69% of the copy ceiling at M=1
+
+The SIMT path serves plain decode, and it is the fastest kernel here at M=1. Its shape is simple: 8
+warps for each block, and one output row for each warp. For narrow K it gives each warp two rows
+instead of one. At M=1 the GEMM only streams weights, so the problem is memory and not math.
+
+**The dequantization and the MACs use different pipes.** The nibble decode is integer work, and the
+MACs are fp16 HFMA2. Volta issues those on separate pipes, so the decode hides under the MACs.
+
+**An int8 experiment proves the point.** `dp4a` gives 4 MACs for each issue slot, against 2 for
+HFMA2. The prototype was correct to 1.4–2%. It was still 50–140% slower at every M from 4 to 16,
+across three rounds of optimization. Its MACs sit on the INT pipe beside their own nibble unpack, so
+the extra density pays for issue contention instead. `gemm_dp4a` stays in the kernel file for
+reference, and the dispatch never selects it.
+
+The decoder also matters. A shift-and-rebias decoder derived from TurboMind beats a PRMT lookup table
+by about 28% at M=1. It has a shorter dependency chain and fewer INT-pipe operations for each value.
+The first version of this kernel overflowed fp16 on real activation outliers. The fix folds the
+global scale into the group scales in the kernel, and the kernel flushes to fp32 for each 16
+elements.
 
 ### The QPN kernel: the one Volta tensor-core instruction, split on N
 
